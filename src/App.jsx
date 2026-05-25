@@ -18,9 +18,9 @@ export default function App() {
   const [events, setEvents] = useState(() => {
     try {
       const saved = localStorage.getItem('mama_events');
-      if (saved) {
+      if (saved !== null) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {
       console.error("Error parsing saved events", e);
@@ -32,12 +32,11 @@ export default function App() {
   const [tasks, setTasks] = useState(() => {
     try {
       const saved = localStorage.getItem('mama_tasks');
-      if (saved) {
+      if (saved !== null) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Sanitize: Keep only tasks that have valid id, title, and dueDate
-          const sanitized = parsed.filter(t => t && typeof t === 'object' && t.id && t.title && t.dueDate);
-          if (sanitized.length > 0) return sanitized;
+        if (Array.isArray(parsed)) {
+          // Mantener todas las tareas válidas creadas por el usuario (sin requerir dueDate obligatorio)
+          return parsed.filter(t => t && typeof t === 'object' && t.id && t.title);
         }
       }
     } catch (e) {
