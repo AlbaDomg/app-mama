@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>App-Mama | Panel de Control de Redes y Canva</title>
+    <meta name="description" content="Dashboard de gestión de redes sociales y diseño en Canva para eventos y música en vivo. Diseñado para usabilidad extrema sin conocimientos técnicos." />
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Asistente de Diagnóstico de Errores en Vivo -->
+    <script>
+      window.addEventListener('error', function(event) {
+        const errorDiv = document.createElement('div');
+        errorDiv.style.position = 'fixed';
+        errorDiv.style.top = '0';
+        errorDiv.style.left = '0';
+        errorDiv.style.width = '100%';
+        errorDiv.style.backgroundColor = '#7f1d1d';
+        errorDiv.style.color = '#fecaca';
+        errorDiv.style.padding = '20px';
+        errorDiv.style.zIndex = '99999';
+        errorDiv.style.fontFamily = 'monospace';
+        errorDiv.style.fontSize = '14px';
+        errorDiv.style.boxSizing = 'border-box';
+        errorDiv.style.whiteSpace = 'pre-wrap';
+        errorDiv.innerHTML = '<strong>❌ ERROR EN CLIENTE (JAVASCRIPT):</strong><br/>' + event.message + '<br/><br/><strong>Stack Trace:</strong><br/>' + (event.error ? event.error.stack : 'No disponible') + '<br/><br/><button onclick="localStorage.clear(); location.reload();" style="background:#ef4444; color:#fff; border:none; padding:8px 14px; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:10px;">Forzar Limpieza de Historial y Recargar</button>';
+        document.body.appendChild(errorDiv);
+      });
+      window.addEventListener('unhandledrejection', function(event) {
+        const errorDiv = document.createElement('div');
+        errorDiv.style.position = 'fixed';
+        errorDiv.style.top = '0';
+        errorDiv.style.left = '0';
+        errorDiv.style.width = '100%';
+        errorDiv.style.backgroundColor = '#7f1d1d';
+        errorDiv.style.color = '#fecaca';
+        errorDiv.style.padding = '20px';
+        errorDiv.style.zIndex = '99999';
+        errorDiv.style.fontFamily = 'monospace';
+        errorDiv.style.fontSize = '14px';
+        errorDiv.style.boxSizing = 'border-box';
+        errorDiv.style.whiteSpace = 'pre-wrap';
+        errorDiv.innerHTML = '<strong>❌ PROMESA RECHAZADA (UNHANDLED REJECTION):</strong><br/>' + event.reason;
+        document.body.appendChild(errorDiv);
+      });
+    </script>
+    <script type="module" crossorigin src="./assets/index-Dd4GjKmq.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CNzXoNKu.css">
+  </head>
+  <body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-purple-500 selection:text-white">
+    <div id="root"></div>
+  </body>
+</html>
+
