@@ -1,0 +1,6 @@
+{
+  "appId": "com.appmama.app",
+  "appName": "App-Mama",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
