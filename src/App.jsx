@@ -185,13 +185,13 @@ export default function App() {
     setActiveTab('help');
   };
 
-  // Handle task title edit
-  const handleEditTaskTitle = (taskId, newTitle) => {
+  // Handle task edit (all fields)
+  const handleEditTask = (taskId, updatedData) => {
     setTasks(prev => prev.map(task => {
       if (task.id === taskId) {
         return {
           ...task,
-          title: newTitle
+          ...updatedData
         };
       }
       return task;
@@ -254,7 +254,7 @@ export default function App() {
                   tasks={tasks} 
                   onValidateTask={(task) => setValidationTask(task)} 
                   onSelectTutorial={handleSelectTutorial}
-                  onEditTaskTitle={handleEditTaskTitle}
+                  onEditTask={handleEditTask}
                   onDeleteTask={handleDeleteTask}
                   onReorderTasks={handleReorderTasks}
                 />

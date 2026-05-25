@@ -1,15 +1,21 @@
 import React, { useState } from 'react';
 import { CheckSquare, AlertCircle, Calendar, ArrowRight, HelpCircle, ExternalLink, Image, Edit2, Check, X, Trash2, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
 
-export default function TaskList({ tasks, onValidateTask, onSelectTutorial, onEditTaskTitle, onDeleteTask, onReorderTasks }) {
+export default function TaskList({ tasks, onValidateTask, onSelectTutorial, onEditTask, onDeleteTask, onReorderTasks }) {
   const [filter, setFilter] = useState('pending'); // default to pending for focused work
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editingTaskTitle, setEditingTaskTitle] = useState('');
+  const [editingTaskCategory, setEditingTaskCategory] = useState('');
+  const [editingTaskDueDate, setEditingTaskDueDate] = useState('');
+  const [editingTaskDescription, setEditingTaskDescription] = useState('');
   const [dragOverTaskId, setDragOverTaskId] = useState(null);
 
-  const startEditing = (id, title) => {
-    setEditingTaskId(id);
-    setEditingTaskTitle(title);
+  const startEditing = (task) => {
+    setEditingTaskId(task.id);
+    setEditingTaskTitle(task.title);
+    setEditingTaskCategory(task.category || 'Diseño en Canva');
+    setEditingTaskDueDate(task.dueDate || '');
+    setEditingTaskDescription(task.description || '');
   };
 
   const handleSaveEdit = (id) => {
@@ -17,8 +23,13 @@ export default function TaskList({ tasks, onValidateTask, onSelectTutorial, onEd
       alert('El nombre de la tarea no puede estar vacío.');
       return;
     }
-    if (onEditTaskTitle) {
-      onEditTaskTitle(id, editingTaskTitle.trim());
+    if (onEditTask) {
+      onEditTask(id, {
+        title: editingTaskTitle.trim(),
+        category: editingTaskCategory,
+        dueDate: editingTaskDueDate,
+        description: editingTaskDescription.trim()
+      });
     }
     setEditingTaskId(null);
   };
@@ -164,106 +175,149 @@ export default function TaskList({ tasks, onValidateTask, onSelectTutorial, onEd
                 {/* Visual Accent Bar */}
                 <div className={`absolute top-0 left-0 w-1.5 h-full ${
                   isCompleted ? 'bg-emerald-500' : 'bg-purple-600'
-                }`}></div>
-
-                {/* Card Top */}
-                <div className="pl-2.5">
-                  <div className="flex justify-between items-start gap-2 mb-3">
-                    <div className="flex items-center gap-1.5">
-                      {/* Grip Drag Cue Handle */}
-                      <div
-                        className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-purple-400 p-0.5 rounded transition-colors shrink-0"
-                        title="Arrastrar tarjeta para reordenar"
-                      >
-                        <GripVertical className="w-3.5 h-3.5" />
-                      </div>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                        (task.category || '').includes('Canva')
-                          ? 'bg-purple-950/60 text-purple-300 border-purple-800/40'
-                          : 'bg-indigo-950/60 text-indigo-300 border-indigo-800/40'
-                      }`}>
-                        {task.category || 'Tarea'}
-                      </span>
-                    </div>
-                    <span className="text-xs text-slate-400 flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-purple-400" />
-                      Límite: {task.dueDate && typeof task.dueDate === 'string' && task.dueDate.includes('-') ? task.dueDate.split('-').reverse().join('/') : 'Sin fecha'}
-                    </span>
-                  </div>
-
+                }`}></div>                {/* Card Top */}
+                <div className="pl-2.5 w-full">
                   {editingTaskId === task.id ? (
-                    <div className="flex items-center gap-2 mb-3">
-                      <input
-                        type="text"
-                        value={editingTaskTitle}
-                        onChange={(e) => setEditingTaskTitle(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSaveEdit(task.id);
-                          if (e.key === 'Escape') setEditingTaskId(null);
-                        }}
-                        className="flex-1 bg-slate-950/80 border border-purple-500 text-white rounded-lg px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent font-sans"
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => handleSaveEdit(task.id)}
-                        className="p-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors cursor-pointer shrink-0"
-                        title="Guardar"
-                      >
-                        <Check className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setEditingTaskId(null)}
-                        className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors cursor-pointer shrink-0"
-                        title="Cancelar"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                    <div className="space-y-4 mb-4 bg-slate-950/40 p-4 rounded-xl border border-purple-500/30 animate-scale-in">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                        <span className="text-xs font-bold text-purple-400">Editando Tarea</span>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleSaveEdit(task.id)}
+                            className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                            title="Guardar"
+                          >
+                            <Check className="w-3.5 h-3.5" /> Guardar
+                          </button>
+                          <button
+                            onClick={() => setEditingTaskId(null)}
+                            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                            title="Cancelar"
+                          >
+                            <X className="w-3.5 h-3.5" /> Cancelar
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Title Edit */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Título</label>
+                        <input
+                          type="text"
+                          value={editingTaskTitle}
+                          onChange={(e) => setEditingTaskTitle(e.target.value)}
+                          className="w-full bg-slate-950 border border-slate-800 focus:border-purple-500 text-slate-200 px-3 py-2 rounded-lg outline-none text-xs"
+                          placeholder="Título de la tarea"
+                        />
+                      </div>
+
+                      {/* Category & Due Date Edit Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Categoría</label>
+                          <select
+                            value={editingTaskCategory}
+                            onChange={(e) => setEditingTaskCategory(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 focus:border-purple-500 text-slate-200 px-2 py-2 rounded-lg outline-none text-xs cursor-pointer"
+                          >
+                            <option value="Diseño en Canva">🎨 Diseño en Canva</option>
+                            <option value="Redes Sociales">📱 Redes Sociales</option>
+                            <option value="Formación / Ayuda">📖 Formación / Ayuda</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Fecha Límite</label>
+                          <input
+                            type="date"
+                            value={editingTaskDueDate}
+                            onChange={(e) => setEditingTaskDueDate(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 focus:border-purple-500 text-slate-200 px-2 py-2 rounded-lg outline-none text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Description Edit */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Descripción</label>
+                        <textarea
+                          value={editingTaskDescription}
+                          onChange={(e) => setEditingTaskDescription(e.target.value)}
+                          rows={3}
+                          className="w-full bg-slate-950 border border-slate-800 focus:border-purple-500 text-slate-200 px-3 py-2 rounded-lg outline-none text-xs resize-none"
+                          placeholder="Descripción detallada de la tarea..."
+                        />
+                      </div>
                     </div>
                   ) : (
-                    <div className="flex items-start justify-between gap-2 mb-2 group/title">
-                      <h4 className="text-lg font-bold text-white leading-snug m-0">
-                        {task.title}
-                      </h4>
-                      <div className="flex items-center gap-0.5 shrink-0 bg-slate-950/40 p-0.5 rounded-lg border border-slate-800/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => handleMoveTask(task.id, 'up')}
-                          className="p-1 hover:bg-slate-800 rounded-md text-slate-400 hover:text-purple-400 transition-colors cursor-pointer"
-                          title="Subir tarea"
-                        >
-                          <ArrowUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleMoveTask(task.id, 'down')}
-                          className="p-1 hover:bg-slate-800 rounded-md text-slate-400 hover:text-purple-400 transition-colors cursor-pointer"
-                          title="Bajar tarea"
-                        >
-                          <ArrowDown className="w-3.5 h-3.5" />
-                        </button>
-                        <div className="w-px h-3.5 bg-slate-800 mx-0.5"></div>
-                        <button
-                          onClick={() => startEditing(task.id, task.title)}
-                          className="p-1 hover:bg-slate-800 rounded-md text-slate-400 hover:text-white transition-colors cursor-pointer"
-                          title="Editar nombre de la tarea"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (window.confirm(`¿Estás seguro de que deseas eliminar la tarea "${task.title}"?`)) {
-                              if (onDeleteTask) onDeleteTask(task.id);
-                            }
-                          }}
-                          className="p-1 hover:bg-rose-950/55 rounded-md text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
-                          title="Eliminar tarea"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                    <>
+                      <div className="flex justify-between items-start gap-2 mb-3">
+                        <div className="flex items-center gap-1.5">
+                          {/* Grip Drag Cue Handle */}
+                          <div
+                            className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-purple-400 p-0.5 rounded transition-colors shrink-0"
+                            title="Arrastrar tarjeta para reordenar"
+                          >
+                            <GripVertical className="w-3.5 h-3.5" />
+                          </div>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
+                            (task.category || '').includes('Canva')
+                              ? 'bg-purple-950/60 text-purple-300 border-purple-800/40'
+                              : 'bg-indigo-950/60 text-indigo-300 border-indigo-800/40'
+                          }`}>
+                            {task.category || 'Tarea'}
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-400 flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5 text-purple-400" />
+                          Límite: {task.dueDate && typeof task.dueDate === 'string' && task.dueDate.includes('-') ? task.dueDate.split('-').reverse().join('/') : 'Sin fecha'}
+                        </span>
                       </div>
-                    </div>
+
+                      <div className="flex items-start justify-between gap-2 mb-2 group/title">
+                        <h4 className="text-lg font-bold text-white leading-snug m-0">
+                          {task.title}
+                        </h4>
+                        <div className="flex items-center gap-0.5 shrink-0 bg-slate-950/40 p-0.5 rounded-lg border border-slate-800/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleMoveTask(task.id, 'up')}
+                            className="p-1 hover:bg-slate-800 rounded-md text-slate-400 hover:text-purple-400 transition-colors cursor-pointer"
+                            title="Subir tarea"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleMoveTask(task.id, 'down')}
+                            className="p-1 hover:bg-slate-800 rounded-md text-slate-400 hover:text-purple-400 transition-colors cursor-pointer"
+                            title="Bajar tarea"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                          <div className="w-px h-3.5 bg-slate-800 mx-0.5"></div>
+                          <button
+                            onClick={() => startEditing(task)}
+                            className="p-1 hover:bg-slate-800 rounded-md text-slate-400 hover:text-white transition-colors cursor-pointer"
+                            title="Editar tarea completa"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`¿Estás seguro de que deseas eliminar la tarea "${task.title}"?`)) {
+                                if (onDeleteTask) onDeleteTask(task.id);
+                              }
+                            }}
+                            className="p-1 hover:bg-rose-950/55 rounded-md text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+                            title="Eliminar tarea"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-slate-300 text-sm leading-relaxed mb-6">
+                        {task.description}
+                      </p>
+                    </>
                   )}
-                  <p className="text-slate-300 text-sm leading-relaxed mb-6">
-                    {task.description}
-                  </p>
                 </div>
 
                 {/* Card Actions */}
