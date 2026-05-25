@@ -56,9 +56,44 @@
         errorDiv.innerHTML = '<strong>❌ PROMESA RECHAZADA (UNHANDLED REJECTION):</strong><br/>' + event.reason;
         document.body.appendChild(errorDiv);
       });
+
+      // Capturar errores de carga de recursos (como scripts JS en caché que dan 404 tras un nuevo despliegue)
+      window.addEventListener('error', function(event) {
+        if (event.target && (event.target.tagName === 'SCRIPT' || event.target.tagName === 'LINK')) {
+          console.warn('Error al cargar recurso (posible desfase de caché PWA):', event.target.src || event.target.href);
+          
+          if (!document.getElementById('pwa-update-banner')) {
+            const updateDiv = document.createElement('div');
+            updateDiv.id = 'pwa-update-banner';
+            updateDiv.style.position = 'fixed';
+            updateDiv.style.bottom = '20px';
+            updateDiv.style.left = '50%';
+            updateDiv.style.transform = 'translateX(-50%)';
+            updateDiv.style.backgroundColor = '#7c3aed';
+            updateDiv.style.color = '#ffffff';
+            updateDiv.style.padding = '16px 24px';
+            updateDiv.style.borderRadius = '16px';
+            updateDiv.style.boxShadow = '0 10px 25px -5px rgba(124, 58, 237, 0.4)';
+            updateDiv.style.zIndex = '99999';
+            updateDiv.style.fontFamily = 'sans-serif';
+            updateDiv.style.fontSize = '14px';
+            updateDiv.style.fontWeight = 'bold';
+            updateDiv.style.textAlign = 'center';
+            updateDiv.style.boxSizing = 'border-box';
+            updateDiv.style.display = 'flex';
+            updateDiv.style.flexDirection = 'column';
+            updateDiv.style.gap = '8px';
+            updateDiv.style.maxWidth = '90%';
+            updateDiv.style.width = '350px';
+            
+            updateDiv.innerHTML = '<span>⚡ ¡Nueva versión de App-Mama disponible!</span><button onclick="caches.keys().then(names => Promise.all(names.map(name => caches.delete(name)))).then(() => { navigator.serviceWorker.getRegistrations().then(regs => { for(let reg of regs) { reg.unregister(); } }); location.reload(true); })" style="background:#ffffff; color:#7c3aed; border:none; padding:10px 14px; border-radius:10px; font-weight:bold; cursor:pointer; transition: all 0.2s;">Actualizar y Cargar Nueva Versión</button>';
+            document.body.appendChild(updateDiv);
+          }
+        }
+      }, true); // Usar captura para atrapar errores de elementos descendientes (recursos)
     </script>
-    <script type="module" crossorigin src="./assets/index-C-68uQXk.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-Cumzqlg5.css">
+    <script type="module" crossorigin src="./assets/index-BOh-scQu.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CEPvs5_U.css">
   </head>
   <body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-purple-500 selection:text-white">
     <div id="root"></div>
