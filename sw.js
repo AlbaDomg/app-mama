@@ -1,4 +1,4 @@
-const CACHE_NAME = 'app-mama-cache-v4';
+const CACHE_NAME = 'app-mama-cache-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
