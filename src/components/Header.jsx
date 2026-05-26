@@ -12,7 +12,7 @@ export default function Header({ activeTab, setActiveTab, tasks }) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-950/40 glow-brand">
-            <Sparkles className="w-6 h-6 text-white animate-pulse" />
+            <Calendar className="w-6 h-6 text-white animate-pulse" />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-white font-sans m-0">
