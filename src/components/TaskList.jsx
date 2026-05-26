@@ -76,27 +76,6 @@ export default function TaskList({ tasks, onValidateTask, onSelectTutorial, onEd
     setDragOverTaskId(null);
   };
 
-  // Move task using Up/Down buttons (filter-aware)
-  const handleMoveTask = (taskId, direction) => {
-    const filteredIndex = filteredTasks.findIndex(t => t.id === taskId);
-    if (filteredIndex === -1) return;
-    const targetFilteredIndex = direction === 'up' ? filteredIndex - 1 : filteredIndex + 1;
-    if (targetFilteredIndex < 0 || targetFilteredIndex >= filteredTasks.length) return;
-
-    const targetTaskId = filteredTasks[targetFilteredIndex].id;
-    
-    const masterIndex = tasks.findIndex(t => t.id === taskId);
-    const masterTargetIndex = tasks.findIndex(t => t.id === targetTaskId);
-    if (masterIndex === -1 || masterTargetIndex === -1) return;
-
-    const updatedTasks = [...tasks];
-    const [draggedItem] = updatedTasks.splice(masterIndex, 1);
-    updatedTasks.splice(masterTargetIndex, 0, draggedItem);
-    if (onReorderTasks) {
-      onReorderTasks(updatedTasks);
-    }
-  };
-
   const filteredTasks = tasks.filter(task => {
     if (filter === 'all') return true;
     if (filter === 'pending') return task.status === 'pending';
@@ -278,21 +257,6 @@ export default function TaskList({ tasks, onValidateTask, onSelectTutorial, onEd
                           {task.title}
                         </h4>
                         <div className="flex items-center gap-0.5 shrink-0 bg-slate-950/40 p-0.5 rounded-lg border border-slate-800/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleMoveTask(task.id, 'up')}
-                            className="p-1 hover:bg-slate-800 rounded-md text-slate-400 hover:text-purple-400 transition-colors cursor-pointer"
-                            title="Subir tarea"
-                          >
-                            <ArrowUp className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleMoveTask(task.id, 'down')}
-                            className="p-1 hover:bg-slate-800 rounded-md text-slate-400 hover:text-purple-400 transition-colors cursor-pointer"
-                            title="Bajar tarea"
-                          >
-                            <ArrowDown className="w-3.5 h-3.5" />
-                          </button>
-                          <div className="w-px h-3.5 bg-slate-800 mx-0.5"></div>
                           <button
                             onClick={() => startEditing(task)}
                             className="p-1 hover:bg-slate-800 rounded-md text-slate-400 hover:text-white transition-colors cursor-pointer"
