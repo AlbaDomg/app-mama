@@ -39,7 +39,7 @@ export default function ConcertRegistrar({ onAddEvent }) {
           Programar Nuevo Concierto
         </h4>
         <p className="text-xs text-slate-400 mb-5 leading-normal">
-          Introduce los datos del show de esta semana. Al guardarlo, se añadirá a la lista y se **crearán automáticamente las tareas de Canva y de Instagram** asociadas.
+          Introduce los datos del show de esta semana. Al guardarlo, se añadirá a la lista y se **crearán automáticamente las tareas asociadas para Canva, Instagram, Facebook y TikTok**.
         </p>
 
         {success && (

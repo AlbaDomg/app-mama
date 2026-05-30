@@ -20,8 +20,19 @@ const LOCAL_STORAGE_CONFIG_KEY = 'mama_firebase_config_keys';
  * Retrieves the current Firebase configuration either from .env or localStorage.
  */
 export function getFirebaseConfig() {
+  // Hardcoded default configuration to guarantee zero-config shared sync on all devices (PC & Mobile)
+  const defaultFirebaseConfig = {
+    apiKey: "AIzaSyD6oBDUInzADiy0mpHi-en5SdBLzeJOy90",
+    authDomain: "app-mama-a44ef.firebaseapp.com",
+    projectId: "app-mama-a44ef",
+    storageBucket: "app-mama-a44ef.firebasestorage.app",
+    messagingSenderId: "594642334331",
+    appId: "1:594642334331:web:5245ee84fa785d9a0a28de"
+  };
+
   // 1. Try env variables
   if (
+    import.meta.env &&
     import.meta.env.VITE_FIREBASE_API_KEY &&
     import.meta.env.VITE_FIREBASE_PROJECT_ID
   ) {
@@ -45,7 +56,8 @@ export function getFirebaseConfig() {
     console.error("Error parsing Firebase config from localStorage", e);
   }
 
-  return null;
+  // 3. Fallback to hardcoded configuration
+  return defaultFirebaseConfig;
 }
 
 /**
