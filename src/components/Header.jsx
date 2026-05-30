@@ -66,7 +66,7 @@ export default function Header({ activeTab, setActiveTab, tasks }) {
       <div className="glass-panel p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 glow-brand/10">
         <div className="space-y-2">
           <h2 className="text-2xl md:text-3xl font-extrabold text-white font-sans tracking-tight">
-            ¡Hola, <span className="bg-gradient-to-r from-purple-400 to-amber-300 bg-clip-text text-transparent">Bienvenida de nuevo!</span> 👋
+            ¡Hola, <span className="bg-gradient-to-r from-purple-400 to-amber-300 bg-clip-text text-transparent">Bienvenida de nuevo, mamá!</span> 👋
           </h2>
           <p className="text-slate-300 text-base max-w-xl">
             Aquí tienes tu plan de trabajo de este mes. Vamos a preparar carteles hermosos en Canva y subirlos a redes sociales de forma fácil y guiada.
