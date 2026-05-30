@@ -11,8 +11,26 @@ import TaskValidationModal from './components/TaskValidationModal';
 import { DEFAULT_TASKS, TUTORIALS } from './data/defaultData';
 import { DEFAULT_EVENTS } from './utils/googleCalendar';
 
+// Firebase cloud sync helpers
+import { 
+  getFirestoreDb, 
+  subscribeToTasks, 
+  subscribeToEvents, 
+  saveTaskToCloud, 
+  updateTaskInCloud, 
+  deleteTaskFromCloud, 
+  saveEventToCloud, 
+  deleteEventFromCloud, 
+  seedCloudDatabaseIfEmpty, 
+  resetCloudDatabase,
+  testConnection 
+} from './utils/firebase';
+import { doc, writeBatch } from 'firebase/firestore';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isDbConnected, setIsDbConnected] = useState(false);
+  const [dbRefreshTrigger, setDbRefreshTrigger] = useState(0);
 
   // Events state (manually registered concerts, loaded from localStorage or initialized with defaults)
   const [events, setEvents] = useState(() => {
@@ -51,42 +69,122 @@ export default function App() {
   // Active tutorial selection state
   const [selectedTutorialId, setSelectedTutorialId] = useState('');
 
-  // Sync tasks to localStorage safely
+  // Initialize and subscribe to database real-time sync when config changes
   useEffect(() => {
-    try {
-      localStorage.setItem('mama_tasks', JSON.stringify(tasks));
-    } catch (e) {
-      console.error("Error writing tasks to localStorage", e);
-    }
-  }, [tasks]);
+    let unsubTasks = null;
+    let unsubEvents = null;
+    let isActive = true;
 
-  // Sync events to localStorage safely
-  useEffect(() => {
-    try {
-      localStorage.setItem('mama_events', JSON.stringify(events));
-    } catch (e) {
-      console.error("Error writing events to localStorage", e);
+    async function setupFirebase() {
+      const db = getFirestoreDb();
+      if (!db) {
+        if (isActive) {
+          setIsDbConnected(false);
+        }
+        return;
+      }
+
+      // Check if we can reach database
+      const connected = await testConnection();
+      if (!connected) {
+        if (isActive) {
+          setIsDbConnected(false);
+        }
+        return;
+      }
+
+      if (!isActive) return;
+
+      setIsDbConnected(true);
+
+      // Seed database with default values if completely empty
+      await seedCloudDatabaseIfEmpty(DEFAULT_TASKS, DEFAULT_EVENTS);
+
+      // Subscribe to real-time Tasks updates
+      unsubTasks = subscribeToTasks(
+        (updatedTasks) => {
+          if (isActive) {
+            setTasks(updatedTasks);
+          }
+        },
+        (err) => {
+          console.error("Error syncing tasks from Firestore:", err);
+        }
+      );
+
+      // Subscribe to real-time Events updates
+      unsubEvents = subscribeToEvents(
+        (updatedEvents) => {
+          if (isActive) {
+            setEvents(updatedEvents);
+          }
+        },
+        (err) => {
+          console.error("Error syncing events from Firestore:", err);
+        }
+      );
     }
-  }, [events]);
+
+    setupFirebase();
+
+    return () => {
+      isActive = false;
+      if (unsubTasks) unsubTasks();
+      if (unsubEvents) unsubEvents();
+    };
+  }, [dbRefreshTrigger]);
+
+  // Sync tasks to localStorage safely (only when NOT connected to DB, or as backup)
+  useEffect(() => {
+    if (!isDbConnected) {
+      try {
+        localStorage.setItem('mama_tasks', JSON.stringify(tasks));
+      } catch (e) {
+        console.error("Error writing tasks to localStorage", e);
+      }
+    }
+  }, [tasks, isDbConnected]);
+
+  // Sync events to localStorage safely (only when NOT connected to DB, or as backup)
+  useEffect(() => {
+    if (!isDbConnected) {
+      try {
+        localStorage.setItem('mama_events', JSON.stringify(events));
+      } catch (e) {
+        console.error("Error writing events to localStorage", e);
+      }
+    }
+  }, [events, isDbConnected]);
 
   // Handle task validation confirmation
-  const handleValidateConfirm = (taskId, deliveryInfo) => {
-    const updatedTasks = tasks.map(task => {
-      if (task.id === taskId) {
-        return {
-          ...task,
+  const handleValidateConfirm = async (taskId, deliveryInfo) => {
+    if (isDbConnected) {
+      try {
+        await updateTaskInCloud(taskId, {
           status: 'completed',
           deliveryInfo: deliveryInfo
-        };
+        });
+      } catch (e) {
+        console.error("Error updating completed task in Firestore:", e);
       }
-      return task;
-    });
-    setTasks(updatedTasks);
+    } else {
+      const updatedTasks = tasks.map(task => {
+        if (task.id === taskId) {
+          return {
+            ...task,
+            status: 'completed',
+            deliveryInfo: deliveryInfo
+          };
+        }
+        return task;
+      });
+      setTasks(updatedTasks);
+    }
     setValidationTask(null);
   };
 
   // Add custom manual task from Admin Panel
-  const handleAddTask = (newTaskData) => {
+  const handleAddTask = async (newTaskData) => {
     let tutorialId = 'tut-canva-poster';
     if (newTaskData.category.includes('Redes') || newTaskData.category.includes('Instagram')) {
       tutorialId = 'tut-instagram-post';
@@ -102,14 +200,23 @@ export default function App() {
       points: 10,
       tutorialId: tutorialId,
       canvaTemplateUrl: 'https://www.canva.com/templates/',
-      deliveryInfo: null
+      deliveryInfo: null,
+      orderIndex: tasks.length
     };
 
-    setTasks(prev => [...prev, taskObj]);
+    if (isDbConnected) {
+      try {
+        await saveTaskToCloud(taskObj);
+      } catch (e) {
+        console.error("Error adding task to Firestore:", e);
+      }
+    } else {
+      setTasks(prev => [...prev, taskObj]);
+    }
   };
 
   // Manual Concert Registrar - Adds show and automatically generates marketing tasks!
-  const handleRegisterEvent = (newEventData) => {
+  const handleRegisterEvent = async (newEventData) => {
     const eventId = `event-manual-${Date.now()}`;
     const eventObj = {
       id: eventId,
@@ -134,7 +241,8 @@ export default function App() {
       points: 15,
       tutorialId: 'tut-canva-poster',
       canvaTemplateUrl: 'https://www.canva.com/templates/',
-      deliveryInfo: null
+      deliveryInfo: null,
+      orderIndex: tasks.length
     };
 
     // Auto-create associated Instagram post task
@@ -147,34 +255,90 @@ export default function App() {
       status: 'pending',
       points: 10,
       tutorialId: 'tut-instagram-post',
-      deliveryInfo: null
+      deliveryInfo: null,
+      orderIndex: tasks.length + 1
     };
 
-    // Update state (both will automatically persist to localStorage in their effects)
-    setEvents(prev => [...prev, eventObj]);
-    setTasks(prev => [...prev, canvaTask, socialTask]);
+    // Auto-create associated Facebook post task
+    const facebookTask = {
+      id: `task-auto-${eventId}-facebook`,
+      title: `Publicar cartel de ${newEventData.artist} en Facebook`,
+      category: 'Redes Sociales',
+      description: `Subir la imagen del cartel del concierto de "${newEventData.title}" en la página oficial de Facebook con una invitación para reservar. Copia el link del post al terminar.`,
+      dueDate: newEventData.date,
+      status: 'pending',
+      points: 10,
+      tutorialId: 'tut-facebook-post',
+      deliveryInfo: null,
+      orderIndex: tasks.length + 2
+    };
+
+    // Auto-create associated TikTok post task
+    const tiktokTask = {
+      id: `task-auto-${eventId}-tiktok`,
+      title: `Publicar vídeo/historia de ${newEventData.artist} en TikTok`,
+      category: 'Redes Sociales',
+      description: `Crear un TikTok corto o subir el cartel animado con la música del artista de "${newEventData.title}" usando hashtags del local. Copia el link del vídeo al terminar.`,
+      dueDate: newEventData.date,
+      status: 'pending',
+      points: 15,
+      tutorialId: 'tut-instagram-story',
+      deliveryInfo: null,
+      orderIndex: tasks.length + 3
+    };
+
+    if (isDbConnected) {
+      try {
+        await saveEventToCloud(eventObj);
+        await saveTaskToCloud(canvaTask);
+        await saveTaskToCloud(socialTask);
+        await saveTaskToCloud(facebookTask);
+        await saveTaskToCloud(tiktokTask);
+      } catch (e) {
+        console.error("Error saving registered event to Firestore:", e);
+      }
+    } else {
+      setEvents(prev => [...prev, eventObj]);
+      setTasks(prev => [...prev, canvaTask, socialTask, facebookTask, tiktokTask]);
+    }
   };
 
   // Delete Concert - Cascades down and deletes its dynamic tasks too!
-  const handleDeleteEvent = (eventId, eventDate, artistName) => {
-    // Delete event
-    setEvents(prev => prev.filter(e => e.id !== eventId));
-    // Delete tasks generated for this event
-    setTasks(prev => prev.filter(t => {
-      // Keep if it is NOT an auto task containing the deleted event ID
-      return !t.id.includes(eventId);
-    }));
+  const handleDeleteEvent = async (eventId, eventDate, artistName) => {
+    if (isDbConnected) {
+      try {
+        await deleteEventFromCloud(eventId);
+      } catch (e) {
+        console.error("Error deleting event from Firestore:", e);
+      }
+    } else {
+      // Delete event
+      setEvents(prev => prev.filter(e => e.id !== eventId));
+      // Delete tasks generated for this event
+      setTasks(prev => prev.filter(t => {
+        // Keep if it is NOT an auto task containing the deleted event ID
+        return !t.id.includes(eventId);
+      }));
+    }
   };
 
   // Reset local states and clean storage
-  const handleResetTasks = () => {
-    setTasks(DEFAULT_TASKS);
-    setEvents(DEFAULT_EVENTS);
-    try {
-      localStorage.removeItem('mama_tasks');
-      localStorage.removeItem('mama_events');
-    } catch (e) {
-      console.error("Error clearing localStorage", e);
+  const handleResetTasks = async () => {
+    if (isDbConnected) {
+      try {
+        await resetCloudDatabase(DEFAULT_TASKS, DEFAULT_EVENTS);
+      } catch (e) {
+        console.error("Error resetting Firestore database:", e);
+      }
+    } else {
+      setTasks(DEFAULT_TASKS);
+      setEvents(DEFAULT_EVENTS);
+      try {
+        localStorage.removeItem('mama_tasks');
+        localStorage.removeItem('mama_events');
+      } catch (e) {
+        console.error("Error clearing localStorage", e);
+      }
     }
   };
 
@@ -185,26 +349,58 @@ export default function App() {
   };
 
   // Handle task edit (all fields)
-  const handleEditTask = (taskId, updatedData) => {
-    setTasks(prev => prev.map(task => {
-      if (task.id === taskId) {
-        return {
-          ...task,
-          ...updatedData
-        };
+  const handleEditTask = async (taskId, updatedData) => {
+    if (isDbConnected) {
+      try {
+        await updateTaskInCloud(taskId, updatedData);
+      } catch (e) {
+        console.error("Error editing task in Firestore:", e);
       }
-      return task;
-    }));
+    } else {
+      setTasks(prev => prev.map(task => {
+        if (task.id === taskId) {
+          return {
+            ...task,
+            ...updatedData
+          };
+        }
+        return task;
+      }));
+    }
   };
 
   // Handle task deletion
-  const handleDeleteTask = (taskId) => {
-    setTasks(prev => prev.filter(task => task.id !== taskId));
+  const handleDeleteTask = async (taskId) => {
+    if (isDbConnected) {
+      try {
+        await deleteTaskFromCloud(taskId);
+      } catch (e) {
+        console.error("Error deleting task from Firestore:", e);
+      }
+    } else {
+      setTasks(prev => prev.filter(task => task.id !== taskId));
+    }
   };
 
   // Handle task reordering
-  const handleReorderTasks = (newTasks) => {
+  const handleReorderTasks = async (newTasks) => {
+    // Optimistic UI update
     setTasks(newTasks);
+    if (isDbConnected) {
+      const db = getFirestoreDb();
+      if (db) {
+        try {
+          const batch = writeBatch(db);
+          newTasks.forEach((task, index) => {
+            const docRef = doc(db, 'tasks', task.id);
+            batch.update(docRef, { orderIndex: index });
+          });
+          await batch.commit();
+        } catch (e) {
+          console.error("Error saving task order to Firestore:", e);
+        }
+      }
+    }
   };
 
   return (
@@ -289,6 +485,8 @@ export default function App() {
                 tasks={tasks} 
                 onAddTask={handleAddTask} 
                 onResetTasks={handleResetTasks}
+                onFirebaseConfigChange={() => setDbRefreshTrigger(prev => prev + 1)}
+                isDbConnected={isDbConnected}
               />
             </section>
           )}

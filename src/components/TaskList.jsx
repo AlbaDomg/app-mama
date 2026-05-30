@@ -9,6 +9,7 @@ export default function TaskList({ tasks, onValidateTask, onSelectTutorial, onEd
   const [editingTaskDueDate, setEditingTaskDueDate] = useState('');
   const [editingTaskDescription, setEditingTaskDescription] = useState('');
   const [dragOverTaskId, setDragOverTaskId] = useState(null);
+  const [activeLightboxImage, setActiveLightboxImage] = useState(null);
 
   const startEditing = (task) => {
     setEditingTaskId(task.id);
@@ -315,12 +316,20 @@ export default function TaskList({ tasks, onValidateTask, onSelectTutorial, onEd
                               <span className="text-slate-400 font-medium flex items-center gap-1">
                                 <Image className="w-3 h-3 text-purple-400" /> Captura entregada:
                               </span>
-                              <div className="w-full h-24 rounded-lg overflow-hidden border border-slate-800 bg-slate-900 flex items-center justify-center">
+                              <div 
+                                onClick={() => setActiveLightboxImage(task.deliveryInfo.image)}
+                                className="w-full h-24 rounded-lg overflow-hidden border border-slate-800 hover:border-purple-500/50 bg-slate-900 flex items-center justify-center cursor-zoom-in relative group/img transition-all"
+                                title="Haz clic para ver a tamaño completo"
+                              >
                                 <img 
                                   src={task.deliveryInfo.image} 
                                   alt="Captura de entrega" 
-                                  className="w-full h-full object-cover"
+                                  className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
                                 />
+                                <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity gap-1.5 text-white font-bold text-[11px]">
+                                  <ExternalLink className="w-3.5 h-3.5 text-purple-400" />
+                                  <span>Ampliar Captura</span>
+                                </div>
                               </div>
                             </div>
                           )}
@@ -373,6 +382,35 @@ export default function TaskList({ tasks, onValidateTask, onSelectTutorial, onEd
           </div>
         )}
       </div>
+
+      {/* Lightbox Modal for Full Image View */}
+      {activeLightboxImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 md:p-8 animate-fade-in"
+          onClick={() => setActiveLightboxImage(null)}
+        >
+          {/* Close button top right */}
+          <button 
+            onClick={() => setActiveLightboxImage(null)}
+            className="absolute top-4 right-4 p-2.5 bg-slate-900/80 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-white transition-all cursor-pointer shadow-lg hover:scale-105"
+            title="Cerrar"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          
+          {/* Image Container */}
+          <div 
+            className="relative max-w-full max-h-full flex items-center justify-center rounded-2xl overflow-hidden shadow-2xl border border-slate-800/60 bg-slate-950 p-2 animate-scale-in"
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image itself
+          >
+            <img 
+              src={activeLightboxImage} 
+              alt="Captura ampliada" 
+              className="max-w-[92vw] max-h-[85vh] md:max-w-[80vw] md:max-h-[80vh] object-contain rounded-xl select-none"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
